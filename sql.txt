@@ -1,0 +1,161 @@
+-- ✅ Create the database if it doesn't exist
+CREATE DATABASE IF NOT EXISTS spring;
+USE spring;
+
+-- 🏢 Create the department table
+CREATE TABLE department (
+    dept_id INT PRIMARY KEY AUTO_INCREMENT,
+    dept_name VARCHAR(100) NOT NULL UNIQUE,
+    location VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 👨‍💼 Create the employee table
+CREATE TABLE employee (
+    emp_id INT PRIMARY KEY AUTO_INCREMENT,
+    emp_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(15) UNIQUE,
+    salary DECIMAL(10,2) CHECK (salary > 0),
+    hire_date DATE,
+    job_title VARCHAR(100),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 📁 Create the project table
+CREATE TABLE project (
+    project_id INT PRIMARY KEY AUTO_INCREMENT,
+    project_name VARCHAR(100) NOT NULL UNIQUE,
+    start_date DATE,
+    end_date DATE,
+    budget DECIMAL(12,2) CHECK (budget >= 0),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 🔗 Create the employee_project table (Many-to-Many relationship)
+CREATE TABLE employee_project (
+    emp_id INT,
+    project_id INT,
+    assigned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (emp_id, project_id),
+    FOREIGN KEY (emp_id) REFERENCES employee(emp_id),
+    FOREIGN KEY (project_id) REFERENCES project(project_id)
+);
+
+-- 📌 Insert values into the department table
+INSERT INTO department (dept_name, location) VALUES
+('Sales', 'Seattle'),
+('Customer Support', 'Boston'),
+('Research & Development', 'Austin'),
+('Legal', 'Denver'),
+('Administration', 'Miami'),
+('Procurement', 'Dallas'),
+('Security', 'Las Vegas'),
+('Quality Assurance', 'San Diego');
+
+-- 📌 Insert values into the employee table
+INSERT INTO employee (emp_name, email, phone, salary, hire_date, job_title, dept_id) VALUES
+('Sophia Miller', 'sophia@example.com', '9012345678', 88000.00, '2020-03-10', 'Sales Manager', 1),
+('Liam Anderson', 'liam@example.com', '9123456789', 60000.00, '2021-07-15', 'Support Representative', 2),
+('Olivia Martin', 'olivia@example.com', '9234567890', 95000.00, '2018-11-20', 'R&D Scientist', 3),
+('Noah Walker', 'noah@example.com', '9345678901', 72000.00, '2022-05-05', 'Legal Advisor', 4);
+
+-- 📌 Insert values into the project table
+INSERT INTO project (project_name, start_date, end_date, budget, dept_id) VALUES
+('Customer Engagement System', '2023-07-01', '2024-01-31', 120000.00, 1),
+('AI Chatbot Development', '2022-03-01', '2023-11-30', 250000.00, 2),
+('New Product Research', '2021-06-15', '2024-06-15', 500000.00, 3);
+
+-- 📌 Insert values into the employee_project table
+INSERT INTO employee_project (emp_id, project_id, assigned_date) VALUES
+(1, 1, '2023-07-10'),
+(2, 2, '2022-03-10'),
+(3, 3, '2021-06-20');
+
+-- 🎯 Basic SQL Queries
+
+-- 1️⃣ Retrieve all employees
+SELECT * FROM employee;
+
+-- 2️⃣ Find all departments
+SELECT dept_name FROM department;
+
+-- 3️⃣ Retrieve employee names and salaries
+SELECT emp_name, salary FROM employee;
+
+-- 4️⃣ List all projects with their budget
+SELECT project_name, budget FROM project;
+
+-- 5️⃣ Get employees hired after 2021-01-17
+SELECT emp_name FROM employee WHERE hire_date > '2021-01-17';
+
+-- 6️⃣ Find employees working in the Sales department
+SELECT e.emp_name, d.dept_name FROM employee e 
+INNER JOIN department d ON e.dept_id = d.dept_id  
+WHERE d.dept_name = 'Sales';
+
+-- 7️⃣ Retrieve projects that started in 2022
+SELECT project_name FROM project WHERE YEAR(start_date) = 2022;
+
+-- 8️⃣ Get employees with a salary greater than 70000
+SELECT emp_name FROM employee WHERE salary > 70000;
+
+-- 9️⃣ Find employees whose names start with 'A'
+SELECT emp_name FROM employee WHERE emp_name LIKE 'A%';
+
+-- 🔟 Retrieve employees sorted by salary in descending order
+SELECT emp_name, salary FROM employee ORDER BY salary DESC;
+
+-- 🎯 Intermediate SQL Queries
+
+-- 1️⃣1️⃣ Get all employees with their department names
+SELECT e.emp_name, d.dept_name FROM employee e 
+INNER JOIN department d ON e.dept_id = d.dept_id;
+
+-- 1️⃣2️⃣ Retrieve all projects along with department names
+SELECT p.project_name, d.dept_name FROM project p 
+INNER JOIN department d ON p.dept_id = d.dept_id;
+
+-- 1️⃣3️⃣ List all employees and their projects using LEFT JOIN
+SELECT e.emp_name, p.project_name FROM employee e 
+LEFT JOIN project p ON p.dept_id = e.dept_id;
+
+-- 1️⃣5️⃣ Display all departments and the number of employees in each
+SELECT d.dept_name, COUNT(e.emp_id) AS num_employees FROM department d 
+LEFT JOIN employee e ON e.dept_id = d.dept_id 
+GROUP BY d.dept_name;
+
+-- 1️⃣6️⃣ Find total salary expenditure for each department
+SELECT d.dept_name, SUM(e.salary) AS total_salary FROM department d 
+LEFT JOIN employee e ON e.dept_id = d.dept_id 
+GROUP BY d.dept_name;
+
+-- 1️⃣7️⃣ Get the average salary of employees per department
+SELECT d.dept_name, AVG(e.salary) AS avg_salary FROM department d 
+LEFT JOIN employee e ON e.dept_id = d.dept_id 
+GROUP BY d.dept_name;
+
+-- 1️⃣8️⃣ Find the department with the highest number of employees
+SELECT d.dept_name, COUNT(e.emp_id) AS employee_count FROM department d 
+LEFT JOIN employee e ON e.dept_id = d.dept_id 
+GROUP BY d.dept_name 
+ORDER BY employee_count DESC LIMIT 1;
+
+-- 2️⃣5️⃣ Find employees earning more than their department’s average salary
+SELECT emp_name, salary FROM employee e 
+WHERE salary > (SELECT AVG(salary) FROM employee WHERE dept_id = e.dept_id);
+
+-- 2️⃣6️⃣ Retrieve employees who haven't been assigned to any project
+SELECT e.emp_name FROM employee e 
+LEFT JOIN employee_project ep ON e.emp_id = ep.emp_id 
+WHERE ep.emp_id IS NULL;
+
+-- ✅ Verify tables
+SELECT * FROM department;
+SELECT * FROM employee;
+SELECT * FROM project;
+SELECT * FROM employee_project;
